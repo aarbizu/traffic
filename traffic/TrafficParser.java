@@ -36,6 +36,7 @@ import com.google.common.collect.Maps;
 public class TrafficParser {
 	
 	/* 
+	 * Road Section indexes for 92-E in sigalert data:
 	 * 2645: Ralston
 	 * 2646: De Anza Blvd
 	 * 2647: Hillsdale
@@ -333,6 +334,7 @@ public class TrafficParser {
 					Iterable<String> fields = dataSplitter.split(line);
 					for (String field : fields) {
 						JSONType type = JSONType.getTypeFromString(field);
+						
 						// JSON Object should contain 'speeds' and 'incidents' JSONArrays
 						if (type == JSONType.OBJECT) {
 							JSONObject jsonObject = new JSONObject(field);
@@ -399,23 +401,32 @@ public class TrafficParser {
 			return new TrafficMetadata(metadataGetter);
 		}
 
+		/**
+		 * Returns a LinkedHashMap to preserve the order, which is in turn based on 
+		 * the order of roadSection ids 
+		 */
 		public LinkedHashMap<Integer,String> parse() {
 			LinkedHashMap<Integer,String> map = Maps.newLinkedHashMap();
 			try {
 				data.initReader();
 				while (data.hasNext()) {
 					String line = data.nextLine();
+					
+					// break up the JSON objects, terminated by semicolons
 					Iterable<String> lineParts = semicolonSplitter.split(line);
+					
 					for (String linePart: lineParts) {
+						// unless it's in key=value format, don't care
 						if (!linePart.contains("=")) continue;
+						
 						Map<String, String> split = detailSplitter.split(linePart);
 						for (Map.Entry<String, String> e : split.entrySet()) {
 							String prefix = e.getKey();
 							JSONType type = JSONType.getTypeFromString(e.getValue());
 							// other traffic data is SensorPositions, RoadSections, Roads
-//							if (type == JSONType.OBJECT) {		
-//								JSONObject jsonObj = parseJsonObject(e.getValue());
-//							}
+							// if (type == JSONType.OBJECT) {		
+							//	 JSONObject jsonObj = parseJsonObject(e.getValue());
+							// }
 							// grab the sensor names for the 92-E exits we're concerned about from the JSONArray
 							if (type == JSONType.ARRAY) {
 								JSONArray jsonArray = new JSONArray(e.getValue());
