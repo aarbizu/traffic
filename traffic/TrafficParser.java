@@ -5,14 +5,17 @@ package traffic;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -28,10 +31,13 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Splitter.MapSplitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.sun.net.httpserver.HttpServer;
 
 /**
+ * 
+ * Read traffic data for 92-E from sigalert.com data structures.
  * @author alan
- *
+ * 
  */
 public class TrafficParser {
 	
@@ -50,6 +56,7 @@ public class TrafficParser {
 	 */
 	private static final String DEBUG_PARAM = "debug";
 	private static boolean DEBUGGING;
+	private static final int MAX_QUEUE_SIZE = 32;
 	private final static String SENSOR_NAMES = "SensorNames";
 	private final static String SPEEDS = "speeds";
 	private final static String INCIDENTS = "incidents";
@@ -57,7 +64,7 @@ public class TrafficParser {
 	private static String dataUrl = "http://www.sigalert.com/Data/NoCal/1~j/NoCalData.json?cb=25615489";
 	private static ArrayList<Integer> roadSections = Lists.newArrayList( 2645, 2646, 2647, 2648, 2649, 2650, 2651, 2652, 2653, 2654 );
 	
-	public enum SourceType {
+	private enum SourceType {
 		DETAILS(detailsUrl, "details.dat"),
 		DATA(dataUrl, "data.dat");
 		
@@ -73,7 +80,7 @@ public class TrafficParser {
 		public String getDebuggingFile() { return this.fileName; }
 	}
 	
-	private JSONArray process() {
+	public JSONArray process() {
 		JSONArray trafficSummary = getTrafficSummary();
 		debugOutput(trafficSummary);
 		return trafficSummary;
@@ -93,7 +100,7 @@ public class TrafficParser {
 		}
 	}
 	
-	static private boolean isDebugging() {
+	private static boolean isDebugging() {
 		return DEBUGGING;
 	}
 
@@ -163,7 +170,7 @@ public class TrafficParser {
 		
 	}
 
-	public enum JSONType {
+	private enum JSONType {
 		OBJECT,
 		ARRAY,
 		UNKNOWN;
@@ -178,7 +185,7 @@ public class TrafficParser {
 		}
 	}
 	
-	public Getter createGetter(SourceType type) {
+	private Getter createGetter(SourceType type) {
 		if (TrafficParser.isDebugging()) {
 			return FileGetter.create(type.getUrl(), type.getDebuggingFile());
 		} else {
@@ -186,18 +193,27 @@ public class TrafficParser {
 		}
 	}
 	
-	static class Getter {
-		private String url;
-		private Iterator<String> lines;
+	private static class Getter {
+		private final static int INIT_BUFFER_SIZE_BYTES = 512;
 		private static String userAgent = "Mozilla/5.0";
-		List<String> data = Lists.newArrayListWithExpectedSize(1000);
+		private boolean initialized;
+		private String url;
+		private BufferedReader in;
+		private OutputStreamWriter out;
+		private ByteArrayOutputStream data;
+		private String currentLine;
 
 		private Getter(String url) {
 			this.url = url;
 		}
 		
 		public static Getter create(String locator) {
-			return new Getter(locator);
+			return new Getter(locator).init();
+		}
+		
+		public Getter init() {
+			initialized = initWriter();
+			return this;
 		}
 		
 		public void get() {
@@ -223,29 +239,37 @@ public class TrafficParser {
 			}
 		}
 		
+		private boolean initWriter() {
+			data = new ByteArrayOutputStream(INIT_BUFFER_SIZE_BYTES);
+			out = new OutputStreamWriter(data);
+			return true;
+		}
+		
 		void store(String s) throws Exception {
-			data.add(s);
+			Preconditions.checkState(initialized);
+			out.write(s);
 		}
 		
 		void initReader() throws Exception {
-			lines = data.iterator();
+			ByteArrayInputStream inputStream = new ByteArrayInputStream(data.toByteArray());
+			in = new BufferedReader(new InputStreamReader(inputStream));
 		}
 		
 		String nextLine() throws Exception {
-			return lines.next();
+			return currentLine;
 		}
 		
 		boolean hasNext() throws Exception {
-			return lines.hasNext();
+			currentLine = in.readLine();
+			return currentLine != null;
 		}
 		
 		void close() throws Exception {
-			// no-op
+			out.close();
 		}
-		
 	}
 	
-	static class FileGetter extends Getter {
+	private static class FileGetter extends Getter {
 		private String filename;
 		private BufferedWriter out;
 		private BufferedReader in;
@@ -311,7 +335,7 @@ public class TrafficParser {
 	/**
 	 * The traffic details is a JSONObject containing speed and incident information
 	 */
-	static class TrafficDetails {
+	private static class TrafficDetails {
 		private Splitter dataSplitter = Splitter.on(";");
 		private Joiner dashJoiner = Joiner.on("-");
 		private Getter data;
@@ -385,7 +409,7 @@ public class TrafficParser {
 	 *	The metadata from sigalert.com contains several JSON structures (objects and arrays).
 	 *	Split out the objects into a String,String map
 	 */
-	static class TrafficMetadata {
+	private static class TrafficMetadata {
 		private Getter data;
 		private MapSplitter detailSplitter = Splitter.on(";")
 											.omitEmptyStrings()
@@ -451,13 +475,33 @@ public class TrafficParser {
 	
 	public static void main (String... args) {
 		// -Ddebug=true
-		DEBUGGING = Boolean.valueOf(System.getProperty(DEBUG_PARAM).toLowerCase());
+		String isDebugSet = System.getProperty(DEBUG_PARAM);
+		if (isDebugSet != null) {
+			DEBUGGING = Boolean.valueOf(isDebugSet.toLowerCase());
+		}
 		
-		TrafficParser tp = new TrafficParser();
-		// hand off the parser to a thread that will run, cache the results with a 15 min TTL, retrieving the data remotely when not cached
+		//		TrafficParser tp = new TrafficParser();
+		//		JSONArray data = tp.process();
+		//		System.out.println("Data: \n" + data.toString(2));
+
+		Checker trafficChecker = Checker.create(new TrafficParser());
 		
-		tp.process();
+		//		Stopwatch timer = Stopwatch.createStarted();
+		//		System.out.println(trafficChecker.retrieve().toString() + "\n :: " + timer.elapsed(TimeUnit.MILLISECONDS));
+		//		timer.reset().start();
+		//		System.out.println(trafficChecker.retrieve().toString() + " \n :: " + timer.elapsed(TimeUnit.MILLISECONDS));
+		//		timer.stop();
+		// TODO - handler augmented with the traffic checker to get the response and feed it back to the client
+		HttpServer server;
+		try {
+			server = HttpServer.create(new InetSocketAddress(8888), MAX_QUEUE_SIZE);
+			server.createContext("/traffic", TrafficRequestHandler.create(trafficChecker));
+			server.setExecutor(null); // creates a default executor
+			server.start();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		// one more thread to listen for requests, returning the 
 	}
 }
