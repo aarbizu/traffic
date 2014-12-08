@@ -41,6 +41,7 @@ import com.sun.net.httpserver.HttpServer;
  */
 public class TrafficParser {
 	
+	private static final int HTTP_PORT = 8888;
 	/* 
 	 * Road Section indexes for 92-E in sigalert data:
 	 * 2645: Ralston
@@ -480,21 +481,12 @@ public class TrafficParser {
 			DEBUGGING = Boolean.valueOf(isDebugSet.toLowerCase());
 		}
 		
-		//		TrafficParser tp = new TrafficParser();
-		//		JSONArray data = tp.process();
-		//		System.out.println("Data: \n" + data.toString(2));
-
 		Checker trafficChecker = Checker.create(new TrafficParser());
 		
-		//		Stopwatch timer = Stopwatch.createStarted();
-		//		System.out.println(trafficChecker.retrieve().toString() + "\n :: " + timer.elapsed(TimeUnit.MILLISECONDS));
-		//		timer.reset().start();
-		//		System.out.println(trafficChecker.retrieve().toString() + " \n :: " + timer.elapsed(TimeUnit.MILLISECONDS));
-		//		timer.stop();
 		// TODO - handler augmented with the traffic checker to get the response and feed it back to the client
 		HttpServer server;
 		try {
-			server = HttpServer.create(new InetSocketAddress(8888), MAX_QUEUE_SIZE);
+			server = HttpServer.create(new InetSocketAddress(HTTP_PORT), MAX_QUEUE_SIZE);
 			server.createContext("/traffic", TrafficRequestHandler.create(trafficChecker));
 			server.setExecutor(null); // creates a default executor
 			server.start();

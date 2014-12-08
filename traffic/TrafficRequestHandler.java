@@ -3,12 +3,12 @@
  */
 package traffic;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.Set;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -18,6 +18,7 @@ import com.sun.net.httpserver.HttpHandler;
  */
 public class TrafficRequestHandler implements HttpHandler {
 	private Checker trafficChecker;
+	private Splitter andSplitter = Splitter.on("&");
 	
 	private TrafficRequestHandler(Checker trafficChecker) {
 		super();
@@ -32,24 +33,67 @@ public class TrafficRequestHandler implements HttpHandler {
 	 */
 	@Override
 	public void handle(HttpExchange t) throws IOException {
-	   InputStream is = t.getRequestBody();
-	   read(is); // .. read the request body
-	   String response = trafficChecker.retrieve().toString();
-	   t.sendResponseHeaders(200, response.length());
-	   OutputStream os = t.getResponseBody();
-	   os.write(response.getBytes());
-	   os.close();
+		t.getRequestBody();
+		String response = dispatch(trafficChecker, parseGetParams(t)); //
+		t.sendResponseHeaders(200, response.length());
+		OutputStream os = t.getResponseBody();
+		os.write(response.getBytes());
+		os.close();
+	}
+	
+	private Command parseGetParams(HttpExchange exchange) {
+		String query = exchange.getRequestURI().getQuery();
+		Iterable<String> keyValPairs = andSplitter.split(query);
+		String first = keyValPairs.iterator().next().toUpperCase();
+		return Command.fromString(first);
 	}
 
-	//TODO read in some REST-like commands and dispatch to the checker appropriately
-	// think one command to get, allowing cache reads, another to force a cache invalidation
-	private void read(InputStream is) {
-		BufferedReader in = new BufferedReader(new InputStreamReader(is));
-		try {
-			in.readLine();
-		} catch (IOException e) {
-			e.printStackTrace();
+	private String dispatch(Checker trafficChecker, Command cmd) {
+		if (cmd != null) {
+			return cmd.doCommand(trafficChecker);
+		} else {
+			return "NO COMMAND";
 		}
 	}
 
+	private static enum Command {
+		CHECK {
+			@Override 
+			public String doCommand(Checker c) {
+				return c.retrieve().toString();
+			}
+		},
+		FORCE {
+			@Override
+			public String doCommand(Checker c) {
+				return c.force().toString();
+			}
+		},
+		UNKNOWN {
+			@Override
+			public String doCommand(Checker c) {
+				return this.name();
+			}
+		};
+		
+		public abstract String doCommand(Checker c);
+		
+		private static final Set<String> commandSet = initializeCommandNameSet();
+		
+		private static Set<String> initializeCommandNameSet() {
+			ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<String>();
+			for (Command c : Command.values()) {
+				setBuilder.add(c.name());
+			}
+			return setBuilder.build();
+		}
+		
+		public static Command fromString(String name) {
+			if (Command.commandSet.contains(name)) {
+				return Command.valueOf(name);
+			} else {
+				return Command.UNKNOWN;
+			}
+		}
+	}
 }

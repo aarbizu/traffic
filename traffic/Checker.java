@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.RateLimiter;
 
 /**
  * Handles access to TrafficParser results.  Use a LoadingCache with a TTL of 15 minutes
@@ -21,7 +22,8 @@ import com.google.common.cache.LoadingCache;
 public class Checker {
 	private final TrafficParser trafficData;
 	private static final String KEY = "92EastTraffficDataKey";
-	LoadingCache<String,JSONArray> data;
+	private LoadingCache<String,JSONArray> data;
+	private RateLimiter uncachedReadLimiter = RateLimiter.create((double) 1/60); // 1 permit every 60 seconds (0.167/sec)
 	
 	private Checker(TrafficParser dataProvider) {
 		this.trafficData = dataProvider;
@@ -56,7 +58,11 @@ public class Checker {
 	}
 
 	public JSONArray force() {
-		data.invalidate(KEY);
-		return retrieve();
+		if (uncachedReadLimiter.tryAcquire()) {
+			data.invalidate(KEY);
+			return retrieve();
+		} else {
+			return retrieve();
+		}
 	}
 }
