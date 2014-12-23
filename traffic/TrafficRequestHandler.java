@@ -34,7 +34,7 @@ public class TrafficRequestHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange t) throws IOException {
 		t.getRequestBody();
-		String response = dispatch(trafficChecker, parseGetParams(t)); //
+		String response = dispatch(trafficChecker, parseGetParams(t)); 
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();
 		os.write(response.getBytes());
