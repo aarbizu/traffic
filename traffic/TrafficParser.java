@@ -483,7 +483,6 @@ public class TrafficParser {
 		
 		Checker trafficChecker = Checker.create(new TrafficParser());
 		
-		// TODO - handler augmented with the traffic checker to get the response and feed it back to the client
 		HttpServer server;
 		try {
 			server = HttpServer.create(new InetSocketAddress(HTTP_PORT), MAX_QUEUE_SIZE);
