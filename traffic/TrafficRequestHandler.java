@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -34,7 +35,12 @@ public class TrafficRequestHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange t) throws IOException {
 		t.getRequestBody();
-		String response = dispatch(trafficChecker, parseGetParams(t)); 
+		Command command = parseGetParams(t);
+		String response = dispatch(trafficChecker, command); 
+		if (command.doSetJsContentType()) {
+			Headers responseHeaders = t.getResponseHeaders();
+			responseHeaders.set("Content-Type", "text/javascript");
+		}
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();
 		os.write(response.getBytes());
@@ -63,6 +69,16 @@ public class TrafficRequestHandler implements HttpHandler {
 				return c.retrieve().toString();
 			}
 		},
+		CHECKJS {
+			@Override
+			public String doCommand(Checker c) {
+				return c.retrieve().toString();
+			}
+			@Override
+			public boolean doSetJsContentType() {
+				return true;
+			}
+		},
 		FORCE {
 			@Override
 			public String doCommand(Checker c) {
@@ -77,6 +93,7 @@ public class TrafficRequestHandler implements HttpHandler {
 		};
 		
 		public abstract String doCommand(Checker c);
+		public boolean doSetJsContentType() { return false; }
 		
 		private static final Set<String> commandSet = initializeCommandNameSet();
 		
