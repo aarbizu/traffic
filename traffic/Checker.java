@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -54,6 +56,16 @@ public class Checker {
 		} catch (ExecutionException e) {
 			e.printStackTrace();
 			return new JSONArray().put("ERROR: Unable to load value " + e.getMessage());
+		}
+	}
+	
+	public JSONObject retrieveObject() {
+		try {
+			String jsonArrayStr = data.get(KEY).toString();
+			return new JSONObject("{ DATA: " + jsonArrayStr + "}");
+		} catch (JSONException | ExecutionException e) {
+			e.printStackTrace();
+			return new JSONObject().putOnce("ERROR", e.getMessage());
 		}
 	}
 

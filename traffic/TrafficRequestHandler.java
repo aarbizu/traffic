@@ -5,6 +5,7 @@ package traffic;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.Set;
 
 import com.google.common.base.Splitter;
@@ -20,6 +21,7 @@ import com.sun.net.httpserver.HttpHandler;
 public class TrafficRequestHandler implements HttpHandler {
 	private Checker trafficChecker;
 	private Splitter andSplitter = Splitter.on("&");
+	private Splitter eqSplitter = Splitter.on("=");
 	
 	private TrafficRequestHandler(Checker trafficChecker) {
 		super();
@@ -40,6 +42,10 @@ public class TrafficRequestHandler implements HttpHandler {
 		if (command.doSetJsContentType()) {
 			Headers responseHeaders = t.getResponseHeaders();
 			responseHeaders.set("Content-Type", "text/javascript");
+			String callback = command.getCallback();
+			StringBuilder newResponse = new StringBuilder();
+			newResponse.append(callback).append("(").append(response).append(");");
+			response = newResponse.toString();
 		}
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();
@@ -50,8 +56,22 @@ public class TrafficRequestHandler implements HttpHandler {
 	private Command parseGetParams(HttpExchange exchange) {
 		String query = exchange.getRequestURI().getQuery();
 		Iterable<String> keyValPairs = andSplitter.split(query);
-		String first = keyValPairs.iterator().next().toUpperCase();
-		return Command.fromString(first);
+		Command c = null;
+		String callbackFunctionName = null;
+		for (String key : keyValPairs) {
+			if (Command.isValidCommand(key.toUpperCase())) {
+				c = Command.fromString(key);
+			} else if (key.contains("=")) {
+				Iterable<String> keyAndValue = eqSplitter.split(key);
+				Iterator<String> iterator = keyAndValue.iterator();
+				String nextKey = iterator.next().toUpperCase();
+				if ("CALLBACK".equals(nextKey)) {
+					callbackFunctionName = iterator.next();
+				}
+			}
+		}
+		c.setCallback(callbackFunctionName);
+		return c;
 	}
 
 	private String dispatch(Checker trafficChecker, Command cmd) {
@@ -70,13 +90,23 @@ public class TrafficRequestHandler implements HttpHandler {
 			}
 		},
 		CHECKJS {
+			/** 
+			 * for angularjs to use $http with JSONP request type,
+			 * the callback= parameter needs to be supported, and we need
+			 * to format the response like this:
+			 *    'callback_param_value( <response> );'
+			 */
 			@Override
 			public String doCommand(Checker c) {
-				return c.retrieve().toString();
+				return c.retrieveObject().toString();
 			}
 			@Override
 			public boolean doSetJsContentType() {
 				return true;
+			}
+			@Override
+			public void setCallback(String functionName) {
+				this.callbackFunctionName = functionName;
 			}
 		},
 		FORCE {
@@ -93,7 +123,10 @@ public class TrafficRequestHandler implements HttpHandler {
 		};
 		
 		public abstract String doCommand(Checker c);
+		protected String callbackFunctionName = null;
 		public boolean doSetJsContentType() { return false; }
+		public void setCallback(String functionName) { /* default no-op */ }
+		public String getCallback() { return callbackFunctionName; }
 		
 		private static final Set<String> commandSet = initializeCommandNameSet();
 		
@@ -111,6 +144,10 @@ public class TrafficRequestHandler implements HttpHandler {
 			} else {
 				return Command.UNKNOWN;
 			}
+		}
+		
+		public static boolean isValidCommand(String name) {
+			return Command.commandSet.contains(name);
 		}
 	}
 }
