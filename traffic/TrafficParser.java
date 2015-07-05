@@ -499,7 +499,7 @@ public class TrafficParser {
 		}
 		
 		Checker trafficChecker = Checker.create(new TrafficParser());
-		TrafficLoggerTask.createAndSchedule(1, TimeUnit.MINUTES, trafficChecker);
+		TrafficLoggerTask.createAndSchedule(15, TimeUnit.MINUTES, trafficChecker);
 		HttpServer server;
 		try {
 			server = HttpServer.create(new InetSocketAddress(HTTP_PORT), MAX_QUEUE_SIZE);
