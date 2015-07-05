@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -122,13 +123,17 @@ public class TrafficParser {
 		
 		LinkedHashMap<Integer,String> trafficMetadataMap = detailsParser.parse();
 		LinkedHashMap<Integer,TrafficData> trafficDataMap = dataParser.parse();
-		
+		dispatchLogging(trafficDataMap);
 		LinkedHashMap<String,String> dataMap = joinMaps(trafficMetadataMap, trafficDataMap);
 		
 		JSONArray customDataJson = getTrafficDataSummary(dataMap);
 		return customDataJson;
 	}
 	
+	private void dispatchLogging(LinkedHashMap<Integer, TrafficData> trafficDataMap) {
+		TrafficLogging.process(trafficDataMap);
+	}
+
 	private JSONArray getTrafficDataSummary(LinkedHashMap<String, String> dataMap) {
 		JSONArray arr = new JSONArray();
 		for (Map.Entry<String, String> e : dataMap.entrySet()) {
@@ -148,7 +153,7 @@ public class TrafficParser {
 		return retVal;
 	}
 	
-	private static class TrafficData {
+	protected static class TrafficData {
 		private int speed;
 		private String incident = null;
 		
@@ -158,6 +163,18 @@ public class TrafficParser {
 		
 		public void setIncident(String incident) {
 			this.incident = incident;
+		}
+		
+		public int getSpeed() {
+			return this.speed;
+		}
+		
+		public String getIncident() {
+			return this.incident;
+		}
+		
+		public boolean hasIncident() {
+			return (incident != null);
 		}
 		
 		@Override
@@ -482,7 +499,7 @@ public class TrafficParser {
 		}
 		
 		Checker trafficChecker = Checker.create(new TrafficParser());
-		
+		TrafficLoggerTask.createAndSchedule(1, TimeUnit.MINUTES, trafficChecker);
 		HttpServer server;
 		try {
 			server = HttpServer.create(new InetSocketAddress(HTTP_PORT), MAX_QUEUE_SIZE);
