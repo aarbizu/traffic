@@ -34,4 +34,6 @@ RUN cd /tmp && \
 	cd traffic && \
     mvn clean compile assembly:single
 
+USER app
+ENV HOME /home/app
 EXPOSE 8888
