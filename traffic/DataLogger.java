@@ -6,12 +6,15 @@ package traffic;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
 
 /**
@@ -36,13 +39,16 @@ public class DataLogger {
 	public boolean initialize() {
 		boolean allInitialized = true;
 		String filePrefix = getFilePrefix();
+		File file = null;
 		for (int i = 0; i < dataFileCount; ++i) {
 			try {
-				File file = getFile(filePrefix, i);
+				file = getFile(filePrefix, i);
 				FileWriter fw = new FileWriter(file, true);
 				datafileWriters.put(i, fw);
 			} catch (IOException e) {
 				allInitialized = false;
+				String fname = (file != null) ? file.getAbsolutePath() : "unknown path";
+				System.err.println("file creation error: " + fname + " " + e.getMessage());
 			}
 		}
 		return allInitialized;
@@ -75,9 +81,11 @@ public class DataLogger {
 	}
 	
 	private File getFile(String prefix, int uniqueId) throws IOException {
-		StringBuilder fileNameBuilder = new StringBuilder(prefix)
-		.append("-").append(uniqueId).append(".csv");
-		File f = new File(fileNameBuilder.toString());
+		StringBuilder fileNameBuilder = new StringBuilder()
+		.append(prefix).append("-").append(uniqueId).append(".csv");
+		final Path logFilePath = FileSystems.getDefault().getPath("logs", fileNameBuilder.toString());
+		File f = logFilePath.toFile();
+		Files.createParentDirs(f);
 		if (f.createNewFile()) {
 			FileWriter headerWriter = new FileWriter(f);
 			headerWriter.write(String.format("%s,%s", "time", "speed"));
