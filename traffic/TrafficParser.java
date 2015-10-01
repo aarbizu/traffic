@@ -62,7 +62,7 @@ public class TrafficParser {
 	private final static String SENSOR_NAMES = "SensorNames";
 	private final static String SPEEDS = "speeds";
 	private final static String INCIDENTS = "incidents";
-	private static String detailsUrl = "http://cdn-static.sigalert.com/129/Zip/RegionInfo/NoCalStatic.js";
+	private static String detailsUrl = "http://cdn-static.sigalert.com/154/Zip/RegionInfo/NoCalStatic.js";
 	private static String dataUrl = "http://www.sigalert.com/Data/NoCal/1~j/NoCalData.json?cb=25615489";
 	private static ArrayList<Integer> roadSections = Lists.newArrayList( 2645, 2646, 2647, 2648, 2649, 2650, 2651, 2652, 2653, 2654 );
 	
