@@ -22,6 +22,8 @@ import com.google.common.io.Files;
  * @author alan
  */
 public class DataLogger {
+	public static final String LOG_FILE_EXT = ".csv";
+	public static final String LOG_PATH = "logs";
 	private Map<Integer, FileWriter> datafileWriters;
 	private int dataFileCount;
 	
@@ -82,8 +84,8 @@ public class DataLogger {
 	
 	private File getFile(String prefix, int uniqueId) throws IOException {
 		StringBuilder fileNameBuilder = new StringBuilder()
-		.append(prefix).append("-").append(uniqueId).append(".csv");
-		final Path logFilePath = FileSystems.getDefault().getPath("logs", fileNameBuilder.toString());
+		.append(prefix).append("-").append(uniqueId).append(LOG_FILE_EXT);
+		final Path logFilePath = FileSystems.getDefault().getPath(LOG_PATH, fileNameBuilder.toString());
 		File f = logFilePath.toFile();
 		Files.createParentDirs(f);
 		if (f.createNewFile()) {

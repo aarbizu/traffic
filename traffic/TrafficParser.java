@@ -504,6 +504,7 @@ public class TrafficParser {
 		try {
 			server = HttpServer.create(new InetSocketAddress(HTTP_PORT), MAX_QUEUE_SIZE);
 			server.createContext("/t", TrafficRequestHandler.create(trafficChecker));
+			server.createContext("/r", TrafficHistoryFileRequestHandler.create());
 			server.setExecutor(null); // creates a default executor
 			server.start();
 		} catch (IOException e) {
