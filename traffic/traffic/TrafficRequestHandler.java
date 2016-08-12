@@ -17,8 +17,8 @@ import com.sun.net.httpserver.HttpHandler;
 /**
  * @author alan
  */
-public class TrafficRequestHandler implements HttpHandler {
-	private Checker trafficChecker;
+class TrafficRequestHandler implements HttpHandler {
+    private Checker trafficChecker;
 	private Splitter andSplitter = Splitter.on("&");
 	private Splitter eqSplitter = Splitter.on("=");
 	
@@ -27,7 +27,7 @@ public class TrafficRequestHandler implements HttpHandler {
 		this.trafficChecker = trafficChecker;
 	}
 	
-	public static HttpHandler create(Checker trafficChecker) {
+	static HttpHandler create(Checker trafficChecker) {
 		return new TrafficRequestHandler(trafficChecker);
 	}
 	/*
@@ -81,7 +81,7 @@ public class TrafficRequestHandler implements HttpHandler {
 		}
 	}
 
-	private static enum Command {
+	private enum Command {
 		CHECK {
 			@Override 
 			public String doCommand(Checker c) {

@@ -26,9 +26,9 @@ import com.google.common.collect.Lists;
  * @author alan
  *
  */
-public class TrafficLogging {
+class TrafficLogging {
 	private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
-	public static boolean process(LinkedHashMap<Integer, TrafficData> trafficDataMap) {
+	static boolean process(LinkedHashMap<Integer, TrafficData> trafficDataMap) {
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		LogTask t = new LogTask(trafficDataMap);
 		Future<Boolean> logInitFuture = executor.submit(t);
@@ -69,7 +69,7 @@ public class TrafficLogging {
 		}
 	}
 	
-	public static LinkedList<String> prepareLoggingData(LinkedHashMap<Integer,TrafficData> dataMap) {
+	private static LinkedList<String> prepareLoggingData(LinkedHashMap<Integer, TrafficData> dataMap) {
 		LinkedList<String> dataSet = Lists.newLinkedList();
 		Date now = new Date();
 		for (Map.Entry<Integer, TrafficData> entry : dataMap.entrySet()) {

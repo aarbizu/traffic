@@ -35,7 +35,7 @@ class DataLogger {
 		return new DataLogger(fileCount);
 	}
 	
-	public boolean initialize() {
+	boolean initialize() {
 		boolean allInitialized = true;
 		String filePrefix = getFilePrefix();
 		File file = null;
@@ -46,14 +46,14 @@ class DataLogger {
 				datafileWriters.put(i, fw);
 			} catch (IOException e) {
 				allInitialized = false;
-				String fname = (file != null) ? file.getAbsolutePath() : "unknown path";
-				System.err.println("file creation error: " + fname + " " + e.getMessage());
+				String filename = (file != null) ? file.getAbsolutePath() : "unknown path";
+				System.err.println("file creation error: " + filename + " " + e.getMessage());
 			}
 		}
 		return allInitialized;
 	}
 	
-	public void logData(LinkedList<String> dataSet) throws IOException {
+	void logData(LinkedList<String> dataSet) throws IOException {
 		int id = 0;
 		for (String s : dataSet) {
 			FileWriter fw = datafileWriters.get(id);

@@ -82,7 +82,7 @@ public class TrafficParser {
 		public String getDebuggingFile() { return this.fileName; }
 	}
 	
-	public JSONArray process() {
+	JSONArray process() {
 		JSONArray trafficSummary = getTrafficSummary();
 		debugOutput(trafficSummary);
 		return trafficSummary;
@@ -153,19 +153,19 @@ public class TrafficParser {
 		return retVal;
 	}
 	
-	protected static class TrafficData {
+	static class TrafficData {
 		private int speed;
 		private String incident = null;
 		
-		public void setSpeed(int speed) {
+		void setSpeed(int speed) {
 			this.speed = speed;
 		}
 		
-		public void setIncident(String incident) {
+		void setIncident(String incident) {
 			this.incident = incident;
 		}
 		
-		public int getSpeed() {
+		int getSpeed() {
 			return this.speed;
 		}
 		

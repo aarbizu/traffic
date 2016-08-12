@@ -21,9 +21,9 @@ import com.google.common.util.concurrent.RateLimiter;
  * 
  * @author alan
  */
-public class Checker {
-	private final traffic.TrafficParser trafficData;
+class Checker {
 	private static final String KEY = "92EastTrafficDataKey";
+	private final traffic.TrafficParser trafficData;
 	private LoadingCache<String,JSONArray> data;
 	private RateLimiter uncachedReadLimiter = RateLimiter.create((double) 1/60); // 1 permit every 60 seconds (0.167/sec)
 	
@@ -31,7 +31,7 @@ public class Checker {
 		this.trafficData = dataProvider;
 	}
 	
-	public static Checker create(traffic.TrafficParser p) {
+	static Checker create(traffic.TrafficParser p) {
 		Checker c = new Checker(p);
 		c.initCache();
 		return c;
@@ -50,7 +50,7 @@ public class Checker {
 				});
 	}
 	
-	public JSONArray retrieve() {
+	JSONArray retrieve() {
 		try {
 			return data.get(KEY);
 		} catch (ExecutionException e) {
@@ -59,7 +59,7 @@ public class Checker {
 		}
 	}
 	
-	public JSONObject retrieveObject() {
+	JSONObject retrieveObject() {
 		try {
 			String jsonArrayStr = data.get(KEY).toString();
 			return new JSONObject("{ DATA: " + jsonArrayStr + "}");
@@ -69,7 +69,7 @@ public class Checker {
 		}
 	}
 
-	public JSONArray force() {
+	JSONArray force() {
 		if (uncachedReadLimiter.tryAcquire()) {
 			data.invalidate(KEY);
 			return retrieve();

@@ -26,7 +26,7 @@ import com.sun.net.httpserver.HttpHandler;
  * @author alan
  *
  */
-public class TrafficHistoryFileRequestHandler implements HttpHandler {
+class TrafficHistoryFileRequestHandler implements HttpHandler {
 	private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 	private static final LoadingCache<String, String> FILE_CACHE = CacheBuilder.newBuilder()
 			.maximumSize(20)
@@ -132,17 +132,17 @@ public class TrafficHistoryFileRequestHandler implements HttpHandler {
 	private static class QueryContents {
 		private String dataKey;
 		private String callback;
-		public static QueryContents create(String dataKey, String callback) {
+		static QueryContents create(String dataKey, String callback) {
 			return new QueryContents(dataKey, callback);
 		}
-		public QueryContents(String dataKey, String callback) {
+		QueryContents(String dataKey, String callback) {
 			this.dataKey = dataKey;
 			this.callback = callback.split("=")[1];
 		}
-		public String getDataKey() {
+		String getDataKey() {
 			return dataKey;
 		}
-		public String getCallback() {
+		String getCallback() {
 			return callback;
 		}
 	}
