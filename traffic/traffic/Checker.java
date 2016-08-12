@@ -22,16 +22,16 @@ import com.google.common.util.concurrent.RateLimiter;
  * @author alan
  */
 public class Checker {
-	private final TrafficParser trafficData;
-	private static final String KEY = "92EastTraffficDataKey";
+	private final traffic.TrafficParser trafficData;
+	private static final String KEY = "92EastTrafficDataKey";
 	private LoadingCache<String,JSONArray> data;
 	private RateLimiter uncachedReadLimiter = RateLimiter.create((double) 1/60); // 1 permit every 60 seconds (0.167/sec)
 	
-	private Checker(TrafficParser dataProvider) {
+	private Checker(traffic.TrafficParser dataProvider) {
 		this.trafficData = dataProvider;
 	}
 	
-	public static Checker create(TrafficParser p) {
+	public static Checker create(traffic.TrafficParser p) {
 		Checker c = new Checker(p);
 		c.initCache();
 		return c;

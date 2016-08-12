@@ -16,7 +16,6 @@ import com.sun.net.httpserver.HttpHandler;
 
 /**
  * @author alan
- *
  */
 public class TrafficRequestHandler implements HttpHandler {
 	private Checker trafficChecker;
@@ -31,7 +30,7 @@ public class TrafficRequestHandler implements HttpHandler {
 	public static HttpHandler create(Checker trafficChecker) {
 		return new TrafficRequestHandler(trafficChecker);
 	}
-	/* (non-Javadoc)
+	/*
 	 * @see com.sun.net.httpserver.HttpHandler#handle(com.sun.net.httpserver.HttpExchange)
 	 */
 	@Override
