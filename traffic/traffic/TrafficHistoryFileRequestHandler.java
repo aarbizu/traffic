@@ -11,7 +11,6 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -38,7 +37,7 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 				}
 			});
 
-	public static HttpHandler create() {
+	static HttpHandler create() {
 		return new TrafficHistoryFileRequestHandler();
 	}
 
@@ -51,9 +50,7 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 		OutputStream os = t.getResponseBody();
 		if (null != fileData) {
 			String callback = qc.getCallback();
-			StringBuilder newResponse = new StringBuilder();
-			newResponse.append(callback).append("(").append(fileData).append(");");
-			byte[] resBytes = newResponse.toString().getBytes();
+            byte[] resBytes = (callback + "(" + fileData + ");").getBytes();
 			t.sendResponseHeaders(200, resBytes.length);
 			copy(new ByteArrayInputStream(resBytes), os);
 		} else {
@@ -121,7 +118,7 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 	private long copyLarge(InputStream input, OutputStream output) throws IOException {
 	   byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
 	   long count = 0;
-	   int n = 0;
+	   int n;
 	   while (-1 != (n = input.read(buffer))) {
 	     output.write(buffer, 0, n);
 	     count += n;

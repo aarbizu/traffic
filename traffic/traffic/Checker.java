@@ -1,6 +1,3 @@
-/**
- * 
- */
 package traffic;
 
 import java.util.concurrent.ExecutionException;

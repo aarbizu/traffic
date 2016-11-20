@@ -1,6 +1,3 @@
-/**
- * 
- */
 package traffic;
 
 import java.util.concurrent.Executors;
@@ -15,11 +12,7 @@ class TrafficLoggerTask {
 	private ScheduledExecutorService scheduler =  Executors.newScheduledThreadPool(1);
 	
 	private void logEvery(final long delay, final TimeUnit durationUnit, final Checker trafficChecker) {
-		final Runnable logger = new Runnable() {
-			public void run() {
-				trafficChecker.force();
-			}
-		};
+		final Runnable logger = trafficChecker::force;
 		
 		scheduler.scheduleAtFixedRate(logger, 0, delay, durationUnit);
 	}

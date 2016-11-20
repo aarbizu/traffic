@@ -1,6 +1,3 @@
-/**
- * 
- */
 package traffic;
 
 import java.io.IOException;
@@ -17,6 +14,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.base.Throwables;
 import traffic.TrafficParser.TrafficData;
 
 import com.google.common.collect.Lists;
@@ -33,7 +31,7 @@ class TrafficLogging {
 		LogTask t = new LogTask(trafficDataMap);
 		Future<Boolean> logInitFuture = executor.submit(t);
 		executor.shutdown();
-		boolean success = false;
+		boolean success;
 		try {
 			success = logInitFuture.get(10, TimeUnit.SECONDS);
 		} catch (ExecutionException | TimeoutException ee) {
@@ -62,7 +60,7 @@ class TrafficLogging {
 				try {
 					logger.logData(data);
 				} catch (IOException e) {
-					
+					System.err.println("Error logging data: " + Throwables.getStackTraceAsString(e));
 				}
 			}
 			return initialized;

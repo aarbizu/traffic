@@ -1,6 +1,3 @@
-/**
- * 
- */
 package traffic;
 
 import java.io.IOException;
@@ -42,9 +39,7 @@ class TrafficRequestHandler implements HttpHandler {
 			Headers responseHeaders = t.getResponseHeaders();
 			responseHeaders.set("Content-Type", "text/javascript");
 			String callback = command.getCallback();
-			StringBuilder newResponse = new StringBuilder();
-			newResponse.append(callback).append("(").append(response).append(");");
-			response = newResponse.toString();
+            response = callback + "(" + response + ");";
 		}
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();
@@ -69,7 +64,8 @@ class TrafficRequestHandler implements HttpHandler {
 				}
 			}
 		}
-		c.setCallback(callbackFunctionName);
+        assert c != null;
+        c.setCallback(callbackFunctionName);
 		return c;
 	}
 
@@ -130,7 +126,7 @@ class TrafficRequestHandler implements HttpHandler {
 		private static final Set<String> commandSet = initializeCommandNameSet();
 		
 		private static Set<String> initializeCommandNameSet() {
-			ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<String>();
+			ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
 			for (Command c : Command.values()) {
 				setBuilder.add(c.name());
 			}

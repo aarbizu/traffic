@@ -1,6 +1,3 @@
-/**
- * 
- */
 package traffic;
 
 import java.io.BufferedReader;
@@ -73,7 +70,7 @@ public class TrafficParser {
 		private String url;
 		private String fileName;
 		
-		private SourceType(String url, String debuggingFile) {
+		SourceType(String url, String debuggingFile) {
 			this.url = url;
 			this.fileName = debuggingFile;
 		}
@@ -92,8 +89,8 @@ public class TrafficParser {
 		if (!TrafficParser.isDebugging()) return;
 		try (
 				FileWriter fw = new FileWriter("analyzed.data");
-				BufferedWriter writer = new BufferedWriter(fw);
-			) 
+				BufferedWriter writer = new BufferedWriter(fw)
+        )
 		{
 			writer.write(data.toString(2));
 			writer.newLine();
@@ -125,9 +122,8 @@ public class TrafficParser {
 		LinkedHashMap<Integer,TrafficData> trafficDataMap = dataParser.parse();
 		dispatchLogging(trafficDataMap);
 		LinkedHashMap<String,String> dataMap = joinMaps(trafficMetadataMap, trafficDataMap);
-		
-		JSONArray customDataJson = getTrafficDataSummary(dataMap);
-		return customDataJson;
+        
+        return getTrafficDataSummary(dataMap);
 	}
 	
 	private void dispatchLogging(LinkedHashMap<Integer, TrafficData> trafficDataMap) {
@@ -225,7 +221,7 @@ public class TrafficParser {
 			this.url = url;
 		}
 		
-		public static Getter create(String locator) {
+		static Getter create(String locator) {
 			return new Getter(locator).init();
 		}
 		
@@ -234,24 +230,22 @@ public class TrafficParser {
 			return this;
 		}
 		
-		public void get() {
+        void get() {
 			HttpGet request = new HttpGet(url);
 			try (
 				CloseableHttpClient client = HttpClients.custom()
 											.setUserAgent(userAgent)
 											.build();
 				CloseableHttpResponse res = client.execute(request);
-				BufferedReader reader = new BufferedReader(new InputStreamReader(res.getEntity().getContent()));
-			) { 
-				String s = null;
+				BufferedReader reader = new BufferedReader(new InputStreamReader(res.getEntity().getContent()))
+            ) {
+				String s;
 				s = reader.readLine();
 				while (s != null) {
 					store(s);
 					s = reader.readLine();
 				}
 				close();
-			} catch (IllegalStateException | IOException e ) {
-				e.printStackTrace();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -299,7 +293,7 @@ public class TrafficParser {
 			this.filename = filename;
 		}
 		
-		public static FileGetter create(String locator, String file) {
+        static FileGetter create(String locator, String file) {
 			return new FileGetter(locator, file).init();
 		}
 		
@@ -358,16 +352,16 @@ public class TrafficParser {
 		private Joiner dashJoiner = Joiner.on("-");
 		private Getter data;
 		
-		public TrafficDetails(Getter detailsGetter) {
+        TrafficDetails(Getter detailsGetter) {
 			this.data = detailsGetter;
 		}
 
-		public static TrafficDetails create(Getter detailsGetter) {
+		static TrafficDetails create(Getter detailsGetter) {
 			return new TrafficDetails(detailsGetter);
 		}
 		
-		public LinkedHashMap<Integer,TrafficData> parse() {
-			LinkedHashMap<Integer,TrafficData> map = initalizeTrafficDataMap();
+		LinkedHashMap<Integer,TrafficData> parse() {
+			LinkedHashMap<Integer,TrafficData> map = initializeTrafficDataMap();
 			Preconditions.checkState(map.size() == roadSections.size());
 			try {
 				data.initReader();
@@ -386,12 +380,13 @@ public class TrafficParser {
 								String keyName = (String) keys.next();
 								JSONArray jsonArray = jsonObject.getJSONArray(keyName);
 								if (keyName.equals(SPEEDS)) {
-									for (Integer i : roadSections) {
-										if (!jsonArray.isNull(i)) {
-											JSONArray values = jsonArray.getJSONArray(i);
-											map.get(i).setSpeed(values.getInt(0));
-										}
-									}
+                                    roadSections.stream()
+                                            .filter(i -> !jsonArray.isNull(i))
+                                            .forEach(i -> {
+                                                    JSONArray values = jsonArray.getJSONArray(i);
+                                                    map.get(i).setSpeed(values.getInt(0));
+                                                }
+                                            );
 								}
 								if (keyName.equals(INCIDENTS)) {
 									for (int i = 0; i < jsonArray.length(); ++i) {
@@ -414,7 +409,7 @@ public class TrafficParser {
 			return map;
 		}
 
-		private LinkedHashMap<Integer, TrafficData> initalizeTrafficDataMap() {
+		private LinkedHashMap<Integer, TrafficData> initializeTrafficDataMap() {
 			LinkedHashMap<Integer, TrafficData> map = Maps.newLinkedHashMap();
 			for (Integer i : roadSections) {
 				map.put(i, new TrafficData());
@@ -439,7 +434,7 @@ public class TrafficParser {
 			this.data = metadataGetter;
 		}
 		
-		public static TrafficMetadata create(Getter metadataGetter) {
+		static TrafficMetadata create(Getter metadataGetter) {
 			return new TrafficMetadata(metadataGetter);
 		}
 
@@ -447,7 +442,7 @@ public class TrafficParser {
 		 * Returns a LinkedHashMap to preserve the order, which is in turn based on 
 		 * the order of roadSection ids 
 		 */
-		public LinkedHashMap<Integer,String> parse() {
+		LinkedHashMap<Integer,String> parse() {
 			LinkedHashMap<Integer,String> map = Maps.newLinkedHashMap();
 			try {
 				data.initReader();
