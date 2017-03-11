@@ -15,6 +15,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -39,6 +41,7 @@ import com.sun.net.httpserver.HttpServer;
  */
 public class TrafficParser {
 	
+    private static final Logger logger = Logger.getLogger(TrafficParser.class.getName());
 	private static final int HTTP_PORT = 8888;
 	/* 
 	 * Road Section indexes for 92-E in sigalert data:
@@ -246,6 +249,7 @@ public class TrafficParser {
 					s = reader.readLine();
 				}
 				close();
+				logger.log(Level.INFO, "req={0},res_code={1},res_msg={2}", new Object[] {request.toString(),res.getStatusLine().getStatusCode(),res.toString()});
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
