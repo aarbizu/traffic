@@ -1,20 +1,14 @@
 package traffic;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -40,7 +34,7 @@ import com.sun.net.httpserver.HttpServer;
 public class TrafficParser {
 	
 	private static final int HTTP_PORT = 8888;
-	/* 
+	/*
 	 * Road Section indexes for 92-E in sigalert data:
 	 * 2645: Ralston
 	 * 2646: De Anza Blvd
@@ -54,6 +48,7 @@ public class TrafficParser {
 	 * 2654: Entr. San Mateo Bridge
 	 */
 	private static final String DEBUG_PARAM = "debug";
+	private static final String LOG_FILE_NAME = "trafficApp.log";
 	private static boolean DEBUGGING;
 	private static final int MAX_QUEUE_SIZE = 32;
 	private final static String SENSOR_NAMES = "SensorNames";
@@ -62,6 +57,7 @@ public class TrafficParser {
 	private static String detailsUrl = "http://cdn-static.sigalert.com/154/Zip/RegionInfo/NoCalStatic.js";
 	private static String dataUrl = "http://www.sigalert.com/Data/NoCal/1~j/NoCalData.json?cb=25615489";
 	private static ArrayList<Integer> roadSections = Lists.newArrayList( 2645, 2646, 2647, 2648, 2649, 2650, 2651, 2652, 2653, 2654 );
+    private final AutoflushingLogger logger;
 	
 	private enum SourceType {
 		DETAILS(detailsUrl, "details.dat"),
@@ -79,6 +75,11 @@ public class TrafficParser {
 		public String getDebuggingFile() { return this.fileName; }
 	}
 	
+	private TrafficParser() {
+	    Logger l = Logger.getLogger(this.getClass().getName());
+	    this.logger = new AutoflushingLogger(l, this.getClass().getName(), LOG_FILE_NAME);
+    }
+    
 	JSONArray process() {
 		JSONArray trafficSummary = getTrafficSummary();
 		debugOutput(trafficSummary);
@@ -104,8 +105,8 @@ public class TrafficParser {
 	}
 
 	private JSONArray getTrafficSummary() {
-		Getter details = createGetter(SourceType.DETAILS);
-		Getter data = createGetter(SourceType.DATA);
+		Getter details = createGetter(SourceType.DETAILS, this.logger);
+		Getter data = createGetter(SourceType.DATA, this.logger);
 		
 		if (details != null) {
 			details.get();
@@ -199,11 +200,11 @@ public class TrafficParser {
 		}
 	}
 	
-	private Getter createGetter(SourceType type) {
+	private Getter createGetter(SourceType type, AutoflushingLogger logger) {
 		if (TrafficParser.isDebugging()) {
 			return FileGetter.create(type.getUrl(), type.getDebuggingFile());
 		} else {
-			return Getter.create(type.getUrl());
+			return Getter.create(type.getUrl(), logger);
 		}
 	}
 	
@@ -216,13 +217,15 @@ public class TrafficParser {
 		private OutputStreamWriter out;
 		private ByteArrayOutputStream data;
 		private String currentLine;
+		private AutoflushingLogger logger;
 
-		private Getter(String url) {
+		private Getter(String url, AutoflushingLogger logger) {
 			this.url = url;
+			this.logger = logger;
 		}
 		
-		static Getter create(String locator) {
-			return new Getter(locator).init();
+		static Getter create(String locator, AutoflushingLogger logger) {
+			return new Getter(locator, logger).init();
 		}
 		
 		public Getter init() {
@@ -246,6 +249,7 @@ public class TrafficParser {
 					s = reader.readLine();
 				}
 				close();
+				logger.log(Level.INFO, "req={0},res_code={1},res_msg={2}", new Object[] {request.toString(),res.getStatusLine().getStatusCode(),res.toString()});
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -289,7 +293,7 @@ public class TrafficParser {
 		private String currentLine;
 
 		private FileGetter (String url, String filename) {
-			super(url);
+			super(url, new AutoflushingLogger(Logger.getLogger(FileGetter.class.getName()), FileGetter.class.getName(), "foo.log"));
 			this.filename = filename;
 		}
 		
@@ -492,8 +496,8 @@ public class TrafficParser {
 		if (isDebugSet != null) {
 			DEBUGGING = Boolean.valueOf(isDebugSet.toLowerCase());
 		}
-		
-		Checker trafficChecker = Checker.create(new TrafficParser());
+        TrafficParser trafficParser = new TrafficParser();
+        Checker trafficChecker = Checker.create(trafficParser);
 		TrafficLoggerTask.createAndSchedule(15, TimeUnit.MINUTES, trafficChecker);
 		HttpServer server;
 		try {
