@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>traffic</groupId>
 	<artifactId>traffic</artifactId>
-	<version>6.1</version>
+	<version>6.2</version>
 	<name>traffic-checker</name>
 	<build>
 		<sourceDirectory>traffic</sourceDirectory>
@@ -51,11 +51,6 @@
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20140107</version>
-		</dependency>
-		<dependency>
-			<groupId>traffic</groupId>
-			<artifactId>traffic</artifactId>
-			<version>6.1</version>
 		</dependency>
 	</dependencies>
 </project>
