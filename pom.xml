@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>traffic</groupId>
 	<artifactId>traffic</artifactId>
-	<version>6.2</version>
+	<version>6.3</version>
 	<name>traffic-checker</name>
 	<build>
 		<sourceDirectory>traffic</sourceDirectory>
