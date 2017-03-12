@@ -89,8 +89,8 @@ public class TrafficParser {
 	private void debugOutput(JSONArray data) {
 		if (!TrafficParser.isDebugging()) return;
 		try (
-				FileWriter fw = new FileWriter("analyzed.data");
-				BufferedWriter writer = new BufferedWriter(fw)
+            FileWriter fw = new FileWriter("analyzed.data");
+            BufferedWriter writer = new BufferedWriter(fw)
         )
 		{
 			writer.write(data.toString(2));
@@ -105,8 +105,11 @@ public class TrafficParser {
 	}
 
 	private JSONArray getTrafficSummary() {
-		Getter details = createGetter(SourceType.DETAILS, this.logger);
-		Getter data = createGetter(SourceType.DATA, this.logger);
+		Getter details = createGetter(SourceType.DETAILS, this.logger)
+                .setPersist(true)
+                .init();
+		Getter data = createGetter(SourceType.DATA, this.logger)
+                .init();
 		
 		if (details != null) {
 			details.get();
@@ -215,9 +218,11 @@ public class TrafficParser {
 		private String url;
 		private BufferedReader in;
 		private OutputStreamWriter out;
+		private FileWriter fw;
 		private ByteArrayOutputStream data;
 		private String currentLine;
 		private AutoflushingLogger logger;
+		private boolean persist = false;
 
 		private Getter(String url, AutoflushingLogger logger) {
 			this.url = url;
@@ -225,13 +230,18 @@ public class TrafficParser {
 		}
 		
 		static Getter create(String locator, AutoflushingLogger logger) {
-			return new Getter(locator, logger).init();
+			return new Getter(locator, logger);
 		}
 		
 		public Getter init() {
 			initialized = initWriter();
 			return this;
 		}
+		
+        Getter setPersist(boolean persist) {
+		    this.persist = persist;
+		    return this;
+        }
 		
         void get() {
 			HttpGet request = new HttpGet(url);
@@ -258,11 +268,22 @@ public class TrafficParser {
 		private boolean initWriter() {
 			data = new ByteArrayOutputStream(INIT_BUFFER_SIZE_BYTES);
 			out = new OutputStreamWriter(data);
+			if (persist) {
+                String[] fields = this.url.split("/");
+                try {
+                    fw = new FileWriter(fields[fields.length - 1]);
+                } catch (IOException ioe) {
+                    persist = false;
+                }
+            }
 			return true;
 		}
 		
 		void store(String s) throws Exception {
 			Preconditions.checkState(initialized);
+			if (persist) {
+			    fw.write(s);
+            }
 			out.write(s);
 		}
 		
