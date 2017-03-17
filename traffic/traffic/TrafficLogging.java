@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Throwables;
-import traffic.TrafficParser.TrafficData;
 
 import com.google.common.collect.Lists;
 
@@ -26,7 +25,7 @@ import com.google.common.collect.Lists;
  */
 class TrafficLogging {
 	private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
-	static boolean process(LinkedHashMap<Integer, TrafficData> trafficDataMap) {
+	static boolean process(LinkedHashMap<Integer, TrafficDatum> trafficDataMap) {
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		LogTask t = new LogTask(trafficDataMap);
 		Future<Boolean> logInitFuture = executor.submit(t);
@@ -48,7 +47,7 @@ class TrafficLogging {
 		private DataLogger logger;
 		private LinkedList<String> data;
 		
-		LogTask(LinkedHashMap<Integer,TrafficData> dataMap) {
+		LogTask(LinkedHashMap<Integer, TrafficDatum> dataMap) {
 			this.logger = DataLogger.getLogger(dataMap.size());
 			this.data = prepareLoggingData(dataMap);
 		}
@@ -67,10 +66,10 @@ class TrafficLogging {
 		}
 	}
 	
-	private static LinkedList<String> prepareLoggingData(LinkedHashMap<Integer, TrafficData> dataMap) {
+	private static LinkedList<String> prepareLoggingData(LinkedHashMap<Integer, TrafficDatum> dataMap) {
 		LinkedList<String> dataSet = Lists.newLinkedList();
 		Date now = new Date();
-		for (Map.Entry<Integer, TrafficData> entry : dataMap.entrySet()) {
+		for (Map.Entry<Integer, TrafficDatum> entry : dataMap.entrySet()) {
 			String logEntry = String.format("%s,%d", LOG_DATE_FORMAT.format(now), entry.getValue().getSpeed());
 			dataSet.add(logEntry);
 		}
