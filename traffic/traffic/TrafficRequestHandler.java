@@ -71,7 +71,7 @@ class TrafficRequestHandler implements HttpHandler {
 
 	private String dispatch(Checker trafficChecker, Command cmd) {
 		if (cmd != null) {
-			return cmd.doCommand(trafficChecker);
+			return cmd.apply(trafficChecker);
 		} else {
 			return "NO COMMAND";
 		}
@@ -80,7 +80,7 @@ class TrafficRequestHandler implements HttpHandler {
 	private enum Command {
 		CHECK {
 			@Override 
-			public String doCommand(Checker c) {
+			public String apply(Checker c) {
 				return c.retrieve().toString();
 			}
 		},
@@ -92,7 +92,7 @@ class TrafficRequestHandler implements HttpHandler {
 			 *    'callback_param_value( <response> );'
 			 */
 			@Override
-			public String doCommand(Checker c) {
+			public String apply(Checker c) {
 				return c.retrieveObject().toString();
 			}
 			@Override
@@ -106,18 +106,18 @@ class TrafficRequestHandler implements HttpHandler {
 		},
 		FORCE {
 			@Override
-			public String doCommand(Checker c) {
+			public String apply(Checker c) {
 				return c.force().toString();
 			}
 		},
 		UNKNOWN {
 			@Override
-			public String doCommand(Checker c) {
+			public String apply(Checker c) {
 				return this.name();
 			}
 		};
 		
-		public abstract String doCommand(Checker c);
+		public abstract String apply(Checker c);
 		protected String callbackFunctionName = null;
 		public boolean doSetJsContentType() { return false; }
 		public void setCallback(String functionName) { /* default no-op */ }

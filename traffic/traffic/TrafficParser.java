@@ -4,19 +4,11 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import org.json.JSONArray;
-import org.json.JSONObject;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.net.httpserver.HttpServer;
@@ -53,29 +45,7 @@ public class TrafficParser {
     private static String dataUrl = "http://www.sigalert.com/Data/NoCal/1~j/NoCalData.json?cb=25615489";
     private static ArrayList<Integer> roadSections = Lists.newArrayList(2645, 2646, 2647, 2648, 2649, 2650, 2651, 2652, 2653, 2654);
     private final AutoflushingLogger logger;
-    private static final Gson gson = new Gson();
     private static final JsonParser json = new JsonParser();
-    
-    private enum SourceType {
-        DETAILS(detailsUrl, "details.dat"),
-        DATA(dataUrl, "data.dat");
-        
-        private String url;
-        private String fileName;
-        
-        SourceType(String url, String debuggingFile) {
-            this.url = url;
-            this.fileName = debuggingFile;
-        }
-        
-        public String getUrl() {
-            return this.url;
-        }
-        
-        public String getDebuggingFile() {
-            return this.fileName;
-        }
-    }
     
     private TrafficParser() {
         Logger l = Logger.getLogger(this.getClass().getName());
@@ -106,26 +76,12 @@ public class TrafficParser {
     }
     
     private JSONArray getTrafficSummary() {
-        TrafficDataReader details = createGetter(SourceType.DETAILS, this.logger)
-                .setPersist(true)
-                .init();
-        
-        TrafficDataReader data = createGetter(SourceType.DATA, this.logger)
-                .init();
-        
-        if (details != null) {
-            details.get();
-        }
-        
-        if (data != null) {
-            data.get();
-        }
-        
-        SensorLocationNameMapExtractor locationMapByRoadSection = SensorLocationNameMapExtractor.create(details);
-        TrafficDetails dataParser = TrafficDetails.create(data);
-        
-        LinkedHashMap<Integer, String> trafficMetadataMap = locationMapByRoadSection.parse();
-        LinkedHashMap<Integer, TrafficDatum> trafficDataMap = dataParser.parse();
+        DataSource source = new DataSource(logger);
+        // TODO -- this method should now return the json array
+        LinkedHashMap<String, String> map = source.collect();
+    
+        LinkedHashMap<Integer, String> trafficMetadataMap = new LinkedHashMap<>();
+        LinkedHashMap<Integer, TrafficDatum> trafficDataMap = new LinkedHashMap<>();
         dispatchLogging(trafficDataMap);
         LinkedHashMap<String, String> dataMap = joinMaps(trafficMetadataMap, trafficDataMap);
         
@@ -154,154 +110,6 @@ public class TrafficParser {
         }
         return retVal;
     }
-    
-    private enum JSONType {
-        OBJECT,
-        ARRAY,
-        UNKNOWN;
-        
-        public static JSONType getTypeFromString(String value) {
-            if (value.startsWith("{")) {
-                return OBJECT;
-            } else if (value.startsWith("[")) {
-                return ARRAY;
-            }
-            return UNKNOWN;
-        }
-    }
-    
-    private TrafficDataReader createGetter(SourceType type, AutoflushingLogger logger) {
-        if (type == SourceType.DETAILS) {
-            return FileDataReader.create("static-js-resources", logger);
-        } else {
-            return WebDataReader.create(type.getUrl(), logger);
-        }
-    }
-    
-    /**
-     * The traffic details is a JSONObject containing speed and incident information
-     */
-    private static class TrafficDetails {
-        private Splitter dataSplitter = Splitter.on(";");
-        private Joiner dashJoiner = Joiner.on("-");
-        private TrafficDataReader data;
-        
-        TrafficDetails(TrafficDataReader detailsGetter) {
-            this.data = detailsGetter;
-        }
-        
-        static TrafficDetails create(TrafficDataReader detailsGetter) {
-            return new TrafficDetails(detailsGetter);
-        }
-        
-        LinkedHashMap<Integer, TrafficDatum> parse() {
-            LinkedHashMap<Integer, TrafficDatum> map = initializeTrafficDataMap();
-            Preconditions.checkState(map.size() == roadSections.size());
-            try {
-                data.initReader();
-                while (data.hasNext()) {
-                    String line = data.nextLine();
-                    Iterable<String> fields = dataSplitter.split(line);
-                    for (String field : fields) {
-                        JSONType type = JSONType.getTypeFromString(field);
-                        
-                        // JSON Object should contain 'speeds' and 'incidents' JSONArrays
-                        if (type == JSONType.OBJECT) {
-                            JSONObject jsonObject = new JSONObject(field);
-                            @SuppressWarnings("unchecked")
-                            Iterator<Object> keys = jsonObject.keys();
-                            while (keys.hasNext()) {
-                                String keyName = (String) keys.next();
-                                JSONArray jsonArray = jsonObject.getJSONArray(keyName);
-                                if (keyName.equals(SPEEDS)) {
-                                    roadSections.stream()
-                                            .filter(i -> !jsonArray.isNull(i))
-                                            .forEach(i -> {
-                                                        JSONArray values = jsonArray.getJSONArray(i);
-                                                        map.get(i).setSpeed(values.getInt(0));
-                                                    }
-                                            );
-                                }
-                                if (keyName.equals(INCIDENTS)) {
-                                    for (int i = 0; i < jsonArray.length(); ++i) {
-                                        JSONArray values = jsonArray.getJSONArray(i);
-                                        int roadSectionNum = values.getInt(0);
-                                        if (roadSections.contains(roadSectionNum)) {
-                                            String roadCondition = dashJoiner.join(values.getString(2), values.getString(3), values.getString(4));
-                                            map.get(roadSectionNum).setIncident(roadCondition);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                data.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return map;
-        }
-        
-        private LinkedHashMap<Integer, TrafficDatum> initializeTrafficDataMap() {
-            LinkedHashMap<Integer, TrafficDatum> map = Maps.newLinkedHashMap();
-            for (Integer i : roadSections) {
-                map.put(i, new TrafficDatum());
-            }
-            return map;
-        }
-    }
-    
-    /**
-     * The metadata from sigalert.com contains several JSON structures (objects and arrays).
-     * Split out the objects into a String,String map
-     */
-    private static class SensorLocationNameMapExtractor {
-        private TrafficDataReader data;
-        private Splitter semicolonSplitter = Splitter.on(";");
-        private Splitter equalsSplitter = Splitter.on("=");
-        
-        private SensorLocationNameMapExtractor(TrafficDataReader metadataGetter) {
-            this.data = metadataGetter;
-        }
-        
-        static SensorLocationNameMapExtractor create(TrafficDataReader metadataGetter) {
-            return new SensorLocationNameMapExtractor(metadataGetter);
-        }
-        
-        /**
-         * Returns a LinkedHashMap to preserve the order, which is in turn based on
-         * the order of roadSection ids
-         */
-        LinkedHashMap<Integer, String> parse() {
-            LinkedHashMap<Integer, String> map = Maps.newLinkedHashMap();
-            try {
-                data.initReader();
-                while (data.hasNext()) {
-                    String line = data.nextLine();
-                    Iterable<String> lineParts = semicolonSplitter.split(line);
-                    for (String segment : lineParts) {
-                        List<String> segmentParts = equalsSplitter.splitToList(segment);
-                        if (segmentParts.size() < 2) continue;
-                        if (segmentParts.get(0).endsWith(SENSOR_NAMES)) {
-                            JsonElement element = json.parse(segmentParts.get(1));
-                            map = roadSections
-                                    .stream()
-                                    .collect(Collectors.toMap(Function.identity(), i -> element.getAsJsonArray().get(i).toString(),
-                                             (u,v) -> { throw new IllegalStateException("Dup. key val " + u); },
-                                             LinkedHashMap::new));
-    
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return map;
-        }
-        
-    }
-    
     
     public static void main(String... args) {
         // -Ddebug=true

@@ -48,7 +48,7 @@ class WebDataReader implements TrafficDataReader {
     }
     
     @Override
-    public void get() {
+    public WebDataReader read() {
         HttpGet request = new HttpGet(url);
         try (
             CloseableHttpClient client = HttpClients.custom()
@@ -68,6 +68,7 @@ class WebDataReader implements TrafficDataReader {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+        return this;
     }
     
     private boolean initWriter() {

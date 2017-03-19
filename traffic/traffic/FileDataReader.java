@@ -38,7 +38,7 @@ class FileDataReader implements TrafficDataReader {
     }
     
     @Override
-    public void get() {
+    public FileDataReader read() {
         try (
             BufferedReader reader = new BufferedReader(new FileReader(this.filename));
         )
@@ -56,6 +56,7 @@ class FileDataReader implements TrafficDataReader {
         } catch (Exception x) {
             x.printStackTrace();
         }
+        return this;
     }
     
     @Override

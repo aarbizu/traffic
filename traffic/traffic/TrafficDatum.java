@@ -7,6 +7,7 @@ package traffic;
 class TrafficDatum {
     private int speed;
     private String incident = null;
+    private String locationName;
     
     void setSpeed(int speed) {
         this.speed = speed;
@@ -27,6 +28,10 @@ class TrafficDatum {
     public boolean hasIncident() {
         return (incident != null);
     }
+    
+    public String getLocationName() { return this.locationName; }
+    
+    public void setLocationName(String location) { this.locationName = location; }
     
     @Override
     public String toString() {

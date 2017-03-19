@@ -7,7 +7,7 @@ package traffic;
 interface TrafficDataReader {
     int INIT_BUFFER_SIZE_BYTES = 512;
     TrafficDataReader init();
-    void get();
+    TrafficDataReader read();
     TrafficDataReader setPersist(boolean doPersistence);
     void initReader() throws Exception;
     boolean hasNext() throws Exception;
