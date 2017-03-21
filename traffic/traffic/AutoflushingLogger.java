@@ -10,9 +10,9 @@ import java.util.logging.*;
  * Created by alan on 3/11/17.
  */
 class AutoflushingLogger  {
-    private Logger logger;
+    private final Logger logger;
     private Handler handler;
-    private String sourceName;
+    private final String sourceName;
     
     
     AutoflushingLogger(Logger logger, String source, String logFileName) {
@@ -34,7 +34,7 @@ class AutoflushingLogger  {
         return this.sourceName;
     }
     
-    void log(String source, Level level, String msg, Object[] params) {
+    private void log(String source, Level level, String msg, Object[] params) {
         LogRecord lr = new LogRecord(level, msg);
         lr.setParameters(params);
         lr.setSourceClassName(source);
