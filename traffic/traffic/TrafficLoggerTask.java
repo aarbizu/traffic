@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
  * @author alan
  */
 class TrafficLoggerTask {
-	private ScheduledExecutorService scheduler =  Executors.newScheduledThreadPool(1);
+	private final ScheduledExecutorService scheduler =  Executors.newScheduledThreadPool(1);
 	
 	private void logEvery(final long delay, final TimeUnit durationUnit, final Checker trafficChecker) {
 		final Runnable logger = trafficChecker::force;

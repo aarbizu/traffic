@@ -25,27 +25,21 @@ import com.google.common.collect.Lists;
  */
 class TrafficLogging {
 	private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
-	static boolean process(LinkedHashMap<Integer, TrafficDatum> trafficDataMap) {
+	static void process(LinkedHashMap<Integer, TrafficDatum> trafficDataMap) {
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		LogTask t = new LogTask(trafficDataMap);
 		Future<Boolean> logInitFuture = executor.submit(t);
 		executor.shutdown();
-		boolean success;
 		try {
-			success = logInitFuture.get(10, TimeUnit.SECONDS);
-		} catch (ExecutionException | TimeoutException ee) {
-			success = false;
-		} catch (InterruptedException e) {
-			// could still be waiting for the future, assume it worked
-			success = true;
-		}
-		
-		return success;
+			logInitFuture.get(10, TimeUnit.SECONDS);
+		} catch (Exception ee) {
+            ee.printStackTrace();
+        }
 	}
 	
 	private static class LogTask implements Callable<Boolean> {
-		private DataLogger logger;
-		private LinkedList<String> data;
+		private final DataLogger logger;
+		private final LinkedList<String> data;
 		
 		LogTask(LinkedHashMap<Integer, TrafficDatum> dataMap) {
 			this.logger = DataLogger.getLogger(dataMap.size());

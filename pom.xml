@@ -21,7 +21,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>traffic.TrafficParser</mainClass>
+							<mainClass>traffic.Traffic</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>

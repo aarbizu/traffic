@@ -10,13 +10,12 @@ import java.util.logging.Level;
  * Created by alan on 3/13/17.
  */
 class FileDataReader implements TrafficDataReader {
-    private String filename;
+    private final String filename;
     private BufferedReader in;
-    private ByteArrayOutputStream data;
     private boolean initialized;
     private String currentLine;
     private OutputStreamWriter out;
-    private AutoflushingLogger logger;
+    private final AutoflushingLogger logger;
     
     private FileDataReader(String filename, AutoflushingLogger logger) {
         this.filename = filename;
@@ -40,7 +39,7 @@ class FileDataReader implements TrafficDataReader {
     @Override
     public FileDataReader read() {
         try (
-            BufferedReader reader = new BufferedReader(new FileReader(this.filename));
+            BufferedReader reader = new BufferedReader(new FileReader(this.filename))
         )
         {
             String s;
@@ -65,7 +64,7 @@ class FileDataReader implements TrafficDataReader {
     }
     
     private boolean initWriter() {
-        data = new ByteArrayOutputStream(INIT_BUFFER_SIZE_BYTES);
+        ByteArrayOutputStream data = new ByteArrayOutputStream(INIT_BUFFER_SIZE_BYTES);
         out = new OutputStreamWriter(data);
         return true;
     }
@@ -77,7 +76,7 @@ class FileDataReader implements TrafficDataReader {
     }
     
     @Override
-    public String nextLine() throws Exception {
+    public String nextLine() {
         return currentLine;
     }
     

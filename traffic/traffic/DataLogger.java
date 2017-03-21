@@ -21,10 +21,10 @@ import com.google.common.io.Files;
 class DataLogger {
 	static final String LOG_FILE_EXT = ".csv";
 	static final String LOG_PATH = "logs";
-	private Map<Integer, FileWriter> datafileWriters;
-	private int dataFileCount;
+	private final Map<Integer, FileWriter> datafileWriters;
+	private final int dataFileCount;
 	
-	private SimpleDateFormat fileNameFormat = new SimpleDateFormat("MM-yyyy");
+	private final SimpleDateFormat fileNameFormat = new SimpleDateFormat("MM-yyyy");
 	
 	private DataLogger(int fileCount) {
 		this.dataFileCount = fileCount;

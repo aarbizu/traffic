@@ -21,17 +21,21 @@ class TrafficDatum {
         return this.speed;
     }
     
-    public String getIncident() {
+    private String getIncident() {
         return this.incident;
     }
     
-    public boolean hasIncident() {
+    private boolean hasIncident() {
         return (incident != null);
     }
     
-    public String getLocationName() { return this.locationName; }
+    String getLocationName() { return this.locationName; }
     
-    public void setLocationName(String location) { this.locationName = location; }
+    void setLocationName(String location) { this.locationName = location; }
+    
+    String speedAndMaybeIncident() {
+        return (hasIncident()) ? getSpeed() + "-" + getIncident() : String.valueOf(getSpeed());
+    }
     
     @Override
     public String toString() {

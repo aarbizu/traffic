@@ -66,7 +66,7 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 		return QueryContents.create(fields[0], fields[1]);
 	}
 
-	private String getFileData(String key) throws FileNotFoundException {
+	private String getFileData(String key) {
 //		System.out.println("got " + query);
 		try {
 			String data = FILE_CACHE.get(key);
@@ -107,12 +107,8 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 		return data;
 	}
 
-	private int copy(InputStream input, OutputStream output) throws IOException {
-	  long count = copyLarge(input, output);
-	  if (count > Integer.MAX_VALUE) {
-	    return -1;
-	  }
-	  return (int) count;
+	private void copy(InputStream input, OutputStream output) throws IOException {
+	  copyLarge(input, output);
 	}
 
 	private long copyLarge(InputStream input, OutputStream output) throws IOException {
@@ -127,8 +123,8 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 	}
 	
 	private static class QueryContents {
-		private String dataKey;
-		private String callback;
+		private final String dataKey;
+		private final String callback;
 		static QueryContents create(String dataKey, String callback) {
 			return new QueryContents(dataKey, callback);
 		}

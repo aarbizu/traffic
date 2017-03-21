@@ -34,22 +34,21 @@ class DataSource {
         this.gson = builder.create();
     }
     
-    private enum SourceType {
+    enum SourceType {
         DATA(DATA_URL),
-        METADATA(METADATA_URL);
+        METADATA(METADATA_URL, "static-js-resources");
         
         private final String url;
-        SourceType(String url) { this.url = url; }
+        private final String fallbackFile;
+    
+        SourceType(String url) { this.url = url; this.fallbackFile = null;}
+        SourceType(String url, String fallBackFile) { this.url = url; this.fallbackFile = fallBackFile; }
         public String getUrl() {  return this.url;  }
+        public String getFallback() { return this.fallbackFile; }
     }
     
     private TrafficDataReader getReaderFor(SourceType type) {
-        if (type == SourceType.METADATA) {
-            //TODO -- METADATA reader should have a fall back for when the static json obj is unavailable (see 403's sometimes)
-            return FileDataReader.create("static-js-resources", logger);
-        } else {
-            return WebDataReader.create(type.getUrl(), logger);
-        }
+        return WebDataReader.create(type, logger);
     }
     
     ByteArrayOutputStream collect() {

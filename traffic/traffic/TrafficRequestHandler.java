@@ -15,9 +15,9 @@ import com.sun.net.httpserver.HttpHandler;
  * @author alan
  */
 class TrafficRequestHandler implements HttpHandler {
-    private Checker trafficChecker;
-	private Splitter andSplitter = Splitter.on("&");
-	private Splitter eqSplitter = Splitter.on("=");
+    private final Checker trafficChecker;
+	private final Splitter andSplitter = Splitter.on("&");
+	private final Splitter eqSplitter = Splitter.on("=");
 	
 	private TrafficRequestHandler(Checker trafficChecker) {
 		super();
@@ -118,7 +118,7 @@ class TrafficRequestHandler implements HttpHandler {
 		};
 		
 		public abstract String apply(Checker c);
-		protected String callbackFunctionName = null;
+		String callbackFunctionName = null;
 		public boolean doSetJsContentType() { return false; }
 		public void setCallback(String functionName) { /* default no-op */ }
 		public String getCallback() { return callbackFunctionName; }
