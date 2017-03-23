@@ -1,7 +1,6 @@
 package traffic;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,11 +9,11 @@ import java.nio.file.Path;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
-import org.json.JSONArray;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.gson.JsonArray;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -89,18 +88,18 @@ class TrafficHistoryFileRequestHandler implements HttpHandler {
 		Scanner s = new Scanner(path);
 		String header = s.nextLine(); // header
 		String[] fields = header.split(",");
-		JSONArray dataArray = new JSONArray();
-		JSONArray timeArray = new JSONArray();
-		JSONArray speedArray = new JSONArray();
-		timeArray.put(fields[0]);
-		speedArray.put(fields[1]);
+		JsonArray dataArray = new JsonArray();
+		JsonArray timeArray = new JsonArray();
+		JsonArray speedArray = new JsonArray();
+		timeArray.add(fields[0]);
+		speedArray.add(fields[1]);
 		while (s.hasNext()) {
 			String[] value = s.nextLine().split(",");
-			timeArray.put(value[0]);
-			speedArray.put(value[1]);
+			timeArray.add(value[0]);
+			speedArray.add(value[1]);
 		}
-		dataArray.put(timeArray);
-		dataArray.put(speedArray);
+		dataArray.add(timeArray);
+		dataArray.add(speedArray);
 		s.close();
 		data = dataArray.toString();
 		FILE_CACHE.put(query, data);
