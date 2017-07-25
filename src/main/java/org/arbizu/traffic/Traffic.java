@@ -35,6 +35,9 @@ class Traffic {
         TrafficLoggerTask.createAndSchedule(15, TimeUnit.MINUTES, trafficChecker);
         HttpServer server;
         try {
+            System.setProperty("sun.net.httpserver.clockTick", "1000");
+            System.setProperty("sun.net.httpserver.maxReqTime", "5");
+            System.setProperty("sun.net.httpserver.maxRspTime", "5");
             server = HttpServer.create(new InetSocketAddress(HTTP_PORT), MAX_QUEUE_SIZE);
             server.createContext("/t", TrafficRequestHandler.create(trafficChecker));
             server.createContext("/r", TrafficHistoryFileRequestHandler.create());
