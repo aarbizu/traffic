@@ -51,7 +51,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>traffic.Traffic</mainClass>
+                            <mainClass>org.arbizu.traffic.Traffic</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
