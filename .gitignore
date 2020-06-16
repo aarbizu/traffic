@@ -96,5 +96,6 @@ crashlytics-build.properties
 fabric.properties
 
 .idea/
+target/
 logs
 traffic.iml
